@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Spin the Fun Wheel</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="style.css" />
+  <meta name="theme-color" content="#ff5722" />
+</head>
+<body>
+  <div class="app">
+    <header>
+      <h1>🎡 Spin the Fun Wheel</h1>
+      <p class="tagline">Customize slices • Spin • Celebrate 🎉</p>
+    </header>
+
+    <main>
+      <div class="wheel-wrap">
+        <canvas id="wheel" width="320" height="320" aria-label="Spin wheel canvas"></canvas>
+        <button id="spin-btn" class="primary">SPIN</button>
+        <div id="pointer" aria-hidden="true"></div>
+        <canvas id="confetti" width="360" height="360" aria-hidden="true"></canvas>
+      </div>
+
+      <section class="controls">
+        <h2>Customize Wheel</h2>
+        <div class="row">
+          <input id="new-option" placeholder="Add an option e.g., Truth, Prize, Push-ups" />
+          <button id="add-option">Add</button>
+        </div>
+
+        <ul id="options-list" aria-live="polite"></ul>
+
+        <div class="row">
+          <button id="save-wheel" class="secondary">Save Wheel</button>
+          <button id="reset-btn" class="ghost">Reset to Default</button>
+        </div>
+      </section>
+
+      <section id="result" class="hidden" role="dialog" aria-modal="true" aria-labelledby="result-title">
+        <div class="card">
+          <h3 id="result-title">Result</h3>
+          <p id="result-text">...</p>
+          <button id="close-result">OK</button>
+        </div>
+      </section>
+
+      <footer>
+        <a href="https://pixabay.com/sound-effects/applause-44774/" target="_blank" rel="noopener">Applause (Pixabay)</a> •
+        <a href="https://freesound.org/" target="_blank" rel="noopener">Tick (generated locally)</a> •
+        <span>Installable PWA • Offline Ready</span>
+      </footer>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
