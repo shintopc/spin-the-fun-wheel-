@@ -1,12 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Spin the Fun Wheel</title>
-  <link rel="manifest" href="manifest.json" />
-  <meta name="theme-color" content="#6c5ce7" />
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#6c5ce7">
   <style>
+    /* CSS from previous implementation */
     * {
       box-sizing: border-box;
       margin: 0;
@@ -394,6 +395,21 @@
       z-index: 10;
       display: none;
     }
+    
+    /* Loading animation */
+    .loading {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(255,255,255,.3);
+      border-radius: 50%;
+      border-top-color: #fff;
+      animation: spin 1s ease-in-out infinite;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
   </style>
 </head>
 <body>
@@ -412,7 +428,7 @@
       </div>
 
       <section class="controls">
-        <h2> </h2>
+        <h2>Customize Wheel</h2>
         <div class="row">
           <input id="new-option" placeholder="Add an option e.g., Truth, Prize, Push-ups" />
           <button id="add-option" class="primary">Add</button>
@@ -435,8 +451,9 @@
       </section>
 
       <footer>
-        
-        <span>Made by Shinto PC</span>
+        <a href="https://pixabay.com/sound-effects/applause-44774/" target="_blank" rel="noopener">Applause (Pixabay)</a> •
+        <a href="https://freesound.org/" target="_blank" rel="noopener">Tick (generated locally)</a> •
+        <span>Installable PWA • Offline Ready</span>
       </footer>
     </main>
   </div>
