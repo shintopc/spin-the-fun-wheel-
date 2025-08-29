@@ -1,37 +1,43 @@
-const CACHE = "funwheel-v1";
-const ASSETS = [
-  "./",
-  "./index.html",
-  "./style.css",
-  "./app.js",
-  "./manifest.json",
-  "./icon-192.png",
-  "./icon-512.png",
-  "./tick.wav",
-  "./celebration.wav"
+const CACHE_NAME = "spin-fun-wheel-cache-v1";
+const urlsToCache = [
+  "/",
+  "/index.html",
+  "/style.css",
+  "/app.js",
+  "/manifest.json",
+  "/icons/icon-192.png",
+  "/icons/icon-512.png"
 ];
 
-self.addEventListener("install", (e) => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
-  self.skipWaiting();
-});
-
-self.addEventListener("activate", (e) => {
-  e.waitUntil(
-    caches.keys().then(keys => Promise.all(keys.map(k => k!==CACHE && caches.delete(k))))
+// Install Service Worker
+self.addEventListener("install", (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => {
+      return cache.addAll(urlsToCache);
+    })
   );
-  self.clients.claim();
 });
 
-self.addEventListener("fetch", (e) => {
-  e.respondWith(
-    caches.match(e.request).then(res => res || fetch(e.request).then(net => {
-      // optional: cache new GET requests
-      if (e.request.method === "GET") {
-        const copy = net.clone();
-        caches.open(CACHE).then(c => c.put(e.request, copy));
-      }
-      return net;
-    }).catch(() => caches.match("./index.html")))
+// Activate Service Worker
+self.addEventListener("activate", (event) => {
+  event.waitUntil(
+    caches.keys().then((cacheNames) =>
+      Promise.all(
+        cacheNames.map((name) => {
+          if (name !== CACHE_NAME) {
+            return caches.delete(name);
+          }
+        })
+      )
+    )
+  );
+});
+
+// Fetch resources
+self.addEventListener("fetch", (event) => {
+  event.respondWith(
+    caches.match(event.request).then((response) => {
+      return response || fetch(event.request);
+    })
   );
 });
