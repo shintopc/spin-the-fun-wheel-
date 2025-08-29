@@ -354,6 +354,46 @@
         font-size: 16px;
       }
     }
+    
+    /* Sound controls */
+    .sound-controls {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      display: flex;
+      gap: 10px;
+      z-index: 10;
+    }
+    
+    .sound-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: white;
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      box-shadow: var(--shadow);
+      border: none;
+    }
+    
+    /* Install button */
+    #installBtn {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 20px;
+      padding: 8px 16px;
+      font-size: 14px;
+      cursor: pointer;
+      box-shadow: var(--shadow);
+      z-index: 10;
+      display: none;
+    }
   </style>
 </head>
 <body>
@@ -402,6 +442,14 @@
     </main>
   </div>
 
+  <!-- Install button -->
+  <button id="installBtn">Install App</button>
+  
+  <!-- Sound controls -->
+  <div class="sound-controls">
+    <button id="muteBtn" class="sound-btn">🔊</button>
+  </div>
+
   <script>
     // Spin the Fun Wheel - PWA
     const canvas = document.getElementById("wheel");
@@ -417,6 +465,8 @@
     const saveBtn = document.getElementById("save-wheel");
     const confettiCanvas = document.getElementById("confetti");
     const cctx = confettiCanvas.getContext("2d");
+    const muteBtn = document.getElementById("muteBtn");
+    const installBtn = document.getElementById("installBtn");
 
     // Vibrant color palette for wheel slices
     const colors = [
@@ -435,11 +485,98 @@
       "Joke 😂",
     ];
 
-    // Create placeholder sounds (would be replaced with actual audio files)
-    const tickSound = new Audio("data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA==");
-    const winSound = new Audio("data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA==");
-    tickSound.volume = 0.4;
-    winSound.volume = 0.7;
+    // Sound variables
+    let audioContext;
+    let tickSound;
+    let winSound;
+    let isMuted = false;
+
+    // Initialize audio
+    function initAudio() {
+      try {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        
+        // Create tick sound
+        function createTickSound() {
+          const oscillator = audioContext.createOscillator();
+          const gainNode = audioContext.createGain();
+          
+          oscillator.type = 'sine';
+          oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+          oscillator.frequency.exponentialRampToValueAtTime(300, audioContext.currentTime + 0.1);
+          
+          gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+          gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+          
+          oscillator.connect(gainNode);
+          gainNode.connect(audioContext.destination);
+          
+          oscillator.start();
+          oscillator.stop(audioContext.currentTime + 0.1);
+          
+          return oscillator;
+        }
+        
+        // Create win sound
+        function createWinSound() {
+          const oscillator = audioContext.createOscillator();
+          const gainNode = audioContext.createGain();
+          
+          oscillator.type = 'sine';
+          oscillator.frequency.setValueAtTime(523.25, audioContext.currentTime); // C5
+          oscillator.frequency.setValueAtTime(659.25, audioContext.currentTime + 0.1); // E5
+          oscillator.frequency.setValueAtTime(783.99, audioContext.currentTime + 0.2); // G5
+          
+          gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+          gainNode.gain.linearRampToValueAtTime(0.5, audioContext.currentTime + 0.05);
+          gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+          
+          oscillator.connect(gainNode);
+          gainNode.connect(audioContext.destination);
+          
+          oscillator.start();
+          oscillator.stop(audioContext.currentTime + 0.5);
+          
+          return oscillator;
+        }
+        
+        // Store sound creation functions
+        tickSound = createTickSound;
+        winSound = createWinSound;
+        
+      } catch (e) {
+        console.error("Audio initialization failed:", e);
+        // Fallback to no sound
+        tickSound = () => {};
+        winSound = () => {};
+      }
+    }
+
+    // Play sound functions
+    function playTick() {
+      if (!isMuted && tickSound) {
+        tickSound();
+      }
+    }
+
+    function playWin() {
+      if (!isMuted && winSound) {
+        winSound();
+      }
+    }
+
+    // Toggle mute
+    muteBtn.addEventListener("click", () => {
+      isMuted = !isMuted;
+      muteBtn.textContent = isMuted ? "🔇" : "🔊";
+      localStorage.setItem("wheelMuted", isMuted);
+    });
+
+    // Load mute state
+    if (localStorage.getItem("wheelMuted") === "true") {
+      isMuted = true;
+      muteBtn.textContent = "🔇";
+    }
 
     let angle = 0;
     let spinning = false;
@@ -555,7 +692,7 @@
       const sliceDeg = 360 / Math.max(1, options.length);
       const sliceIndex = Math.floor((currentAngleDeg % 360) / sliceDeg);
       if (sliceIndex !== lastTick){
-        try { tickSound.currentTime = 0; tickSound.play(); } catch(e){}
+        playTick();
         lastTick = sliceIndex;
       }
     }
@@ -568,7 +705,7 @@
       resultText.textContent = `🎉 ${selected}`;
       resultModal.classList.add("visible");
 
-      try { winSound.currentTime = 0; winSound.play(); } catch(e){}
+      playWin();
       fireConfetti();
     }
 
@@ -714,30 +851,76 @@
       }
     }
 
-    // ----- Register SW -----
-    if ("serviceWorker" in navigator){
-      window.addEventListener("load", () => {
-        navigator.serviceWorker.register("./service-worker.js");
+    // ----- PWA Installation -----
+    let deferredPrompt;
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      // Prevent the mini-infobar from appearing on mobile
+      e.preventDefault();
+      // Stash the event so it can be triggered later
+      deferredPrompt = e;
+      // Show the install button
+      installBtn.style.display = 'block';
+      
+      installBtn.addEventListener('click', () => {
+        // Hide the install button
+        installBtn.style.display = 'none';
+        // Show the install prompt
+        deferredPrompt.prompt();
+        // Wait for the user to respond to the prompt
+        deferredPrompt.userChoice.then((choiceResult) => {
+          if (choiceResult.outcome === 'accepted') {
+            console.log('User accepted the install prompt');
+          } else {
+            console.log('User dismissed the install prompt');
+          }
+          deferredPrompt = null;
+        });
+      });
+    });
+
+    // ----- Service Worker Registration -----
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('service-worker.js')
+          .then((registration) => {
+            console.log('SW registered: ', registration);
+          })
+          .catch((registrationError) => {
+            console.log('SW registration failed: ', registrationError);
+          });
       });
     }
 
-    // accessibility: spin on Enter
-    document.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" && !spinning) spinWheel();
-    });
-    spinBtn.addEventListener("click", spinWheel);
-    
-    // Handle touch events for mobile
-    let touchStartY = 0;
-    canvas.addEventListener('touchstart', e => {
-      touchStartY = e.touches[0].clientY;
-    });
-    
-    canvas.addEventListener('touchend', e => {
-      if (!spinning && e.changedTouches[0].clientY - touchStartY < -50) {
-        spinWheel();
-      }
-    });
+    // ----- Initialize App -----
+    function initApp() {
+      // Initialize audio on first user interaction
+      document.body.addEventListener('click', function init() {
+        initAudio();
+        document.body.removeEventListener('click', init);
+      }, { once: true });
+      
+      // accessibility: spin on Enter
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && !spinning) spinWheel();
+      });
+      spinBtn.addEventListener("click", spinWheel);
+      
+      // Handle touch events for mobile
+      let touchStartY = 0;
+      canvas.addEventListener('touchstart', e => {
+        touchStartY = e.touches[0].clientY;
+      });
+      
+      canvas.addEventListener('touchend', e => {
+        if (!spinning && e.changedTouches[0].clientY - touchStartY < -50) {
+          spinWheel();
+        }
+      });
+    }
+
+    // Start the app
+    initApp();
   </script>
 </body>
 </html>
